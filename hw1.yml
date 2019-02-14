@@ -1,0 +1,54 @@
+---
+- hosts: hw1
+  gather_facts: no
+  sudo: yes
+  pre_tasks:
+          - name: Install updates
+            raw: sudo apt-get update
+          - name: Install python2
+            raw: sudo apt-get -y install python
+  tasks:
+          - name: Make a directory for the git files
+            file:
+                    path: hw0files
+                    state: directory
+          - name: Install git
+            apt:
+                    name: git
+                    state: present
+          - name: Checkout git file
+            git:
+                  repo: "https://github.com/allalee/CSE356HW1.git"
+                  clone: yes
+                  dest: hw0files
+                  version: HEAD
+          - name: Install apache
+            apt:
+                    name: apache2
+                    state: present
+          - name: Adjusting firewall
+            command: ufw app list
+            become: yes
+          - name: Allow Apache
+            command: ufw allow 'Apache'
+            become: yes
+          - name: Allow OpenSSH
+            command: ufw allow 'OpenSSH'
+            become: yes
+          - name: Verify changes
+            command: ufw status
+            become: yes
+          - name: Check webserver
+            command: systemctl status apache2
+            become: yes
+          - name: Enable HTTP
+            command: ufw allow 80
+            become: yes
+          - name: Enable HTTPS
+            command: ufw allow 443
+            become: yes
+          - name: Copy html files to proper place
+            synchronize:
+                    src: /home/ubuntu/hw0files/
+                    dest: /var/www/html
+            delegate_to: "{{ inventory_hostname }}"
